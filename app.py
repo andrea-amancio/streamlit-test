@@ -1,10 +1,11 @@
 import streamlit as st
 from PIL import Image, ExifTags
-#import piexif
-#import piexif.helper
+import piexif
+import folium
+from io import BytesIO
 
 # Titre de l'application
-st.title('Éditeur de métadonnées EXIF ou pas')
+st.title('Éditeur de métadonnées EXIF et Cartes')
 
 
 # Fonction pour convertir les degrés décimaux en degrés, minutes et secondes rationnels
@@ -61,24 +62,33 @@ if uploaded_file is not None:
         for key, value in exif.items():
             exif_edit[key] = st.text_input(f"{key}:", str(value))
         
-        if st.button("Enregistrer"):
-            # Extraction et modification des métadonnées EXIF
-            exif_dict = piexif.load(image.info.get("exif", b'')) if "exif" in image.info else {"GPS": {}}
-            gps_dict = create_gps_dict(latitude, longitude)
-            exif_dict['GPS'] = gps_dict
-            exif_bytes = piexif.dump(exif_dict)
-
-            # Enregistrement de l'image avec les nouvelles métadonnées
-            image.save("output_image.jpg", "jpeg", exif=exif_bytes)
-            st.success("Les données GPS ont été mises à jour.")
         
-            # Fournir un lien de téléchargement pour l'image modifiée
-            with open("output_image.jpg", "rb") as file:
-                btn = st.download_button(
-                    label="Télécharger l'image modifiée",
-                    data=file,
-                    file_name="output_image.jpg",
-                    mime="image/jpeg"
-                )
+            if st.button("Enregistrer"):
+                # Extraction et modification des métadonnées EXIF
+                exif_dict = piexif.load(image.info.get("exif", b'')) if "exif" in image.info else {"GPS": {}}
+                gps_dict = create_gps_dict(latitude, longitude)
+                exif_dict['GPS'] = gps_dict
+                exif_bytes = piexif.dump(exif_dict)
+
+                # Enregistrement de l'image avec les nouvelles métadonnées
+                image.save("output_image.jpg", "jpeg", exif=exif_bytes)
+                st.success("Les données GPS ont été mises à jour.")
+
+                # Fournir un lien de téléchargement pour l'image modifiée
+                with open("output_image.jpg", "rb") as file:
+                    st.download_button(
+                        label="Télécharger l'image modifiée",
+                        data=file,
+                        file_name="output_image.jpg",
+                        mime="image/jpeg"
+                    )
+
+                # Affichage de la carte avec les coordonnées GPS
+                st.write("## Carte avec la localisation GPS")
+                m = folium.Map(location=[latitude, longitude], zoom_start=12)
+                folium.Marker([latitude, longitude], popup="Localisation").add_to(m)
+                map_data = BytesIO()
+                m.save(map_data, close_file=False)
+                st.components.v1.html(map_data.getvalue().decode(), height=500, width=700)
     else:
         st.write("Aucune métadonnée EXIF trouvée dans l'image.")
