@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image, ExifTags
-import piexif
+from padas import piexif
 import folium
 from io import BytesIO
 
