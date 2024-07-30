@@ -30,20 +30,6 @@ def create_gps_dict(lat, lon):
 
 
 
-# Chargement de l'image
-uploaded_file = st.file_uploader("Choisissez une image...", type=["jpg", "jpeg"])
-if uploaded_file is not None:
-    image = Image.open(uploaded_file)
-    
-    # Affichage de l'image
-    st.image(image, caption='Image chargée.', use_column_width=True)
-    st.write("")
-
-     # Formulaire pour entrer la localisation
-    st.write("## Modifiez la localisation GPS")
-    latitude = st.number_input("Latitude", value=48.8566)  # Valeur par défaut : Paris
-    longitude = st.number_input("Longitude", value=2.3522)  # Valeur par défaut : Paris
-
     # Chargement de l'image
 uploaded_file = st.file_uploader("Choisissez une image...", type=["jpg", "jpeg"])
 if uploaded_file is not None:
