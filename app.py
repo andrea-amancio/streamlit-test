@@ -1,8 +1,34 @@
 import streamlit as st
 from PIL import Image, ExifTags
+import piexif
+import piexif.helper
 
 # Titre de l'application
-st.title('Éditeur de métadonnées EXIF')
+st.title('Éditeur de métadonnées EXIF ou pas')
+
+
+# Fonction pour convertir les degrés décimaux en degrés, minutes et secondes rationnels
+def deg_to_dms_rational(deg):
+    d = int(deg)
+    m = int((deg - d) * 60)
+    s = round((deg - d - m / 60) * 3600, 2)
+    return (d, m, s)
+
+# Fonction pour créer un dictionnaire GPS avec latitude et longitude
+def create_gps_dict(lat, lon):
+    lat_dms = deg_to_dms_rational(abs(lat))
+    lon_dms = deg_to_dms_rational(abs(lon))
+    lat_ref = 'N' if lat >= 0 else 'S'
+    lon_ref = 'E' if lon >= 0 else 'W'
+
+    return {
+        piexif.GPSIFD.GPSLatitudeRef: lat_ref,
+        piexif.GPSIFD.GPSLatitude: [(lat_dms[0], 1), (lat_dms[1], 1), (int(lat_dms[2] * 100), 100)],
+        piexif.GPSIFD.GPSLongitudeRef: lon_ref,
+        piexif.GPSIFD.GPSLongitude: [(lon_dms[0], 1), (lon_dms[1], 1), (int(lon_dms[2] * 100), 100)]
+    }
+
+
 
 # Chargement de l'image
 uploaded_file = st.file_uploader("Choisissez une image...", type=["jpg", "jpeg"])
@@ -12,6 +38,11 @@ if uploaded_file is not None:
     # Affichage de l'image
     st.image(image, caption='Image chargée.', use_column_width=True)
     st.write("")
+
+     # Formulaire pour entrer la localisation
+    st.write("## Modifiez la localisation GPS")
+    latitude = st.number_input("Latitude", value=48.8566)  # Valeur par défaut : Paris
+    longitude = st.number_input("Longitude", value=2.3522)  # Valeur par défaut : Paris
 
     # Affichage des métadonnées EXIF
     exif_data = image._getexif()
@@ -30,9 +61,24 @@ if uploaded_file is not None:
         for key, value in exif.items():
             exif_edit[key] = st.text_input(f"{key}:", str(value))
         
-        if st.button("Enregistrer les modifications"):
-            # Les modifications ne sont pas réellement enregistrées dans ce code
-            # car la bibliothèque Pillow ne supporte pas l'écriture de certaines métadonnées EXIF.
-            st.write("Les modifications ont été enregistrées (en apparence).")
+        if st.button("Enregistrer"):
+            # Extraction et modification des métadonnées EXIF
+            exif_dict = piexif.load(image.info.get("exif", b'')) if "exif" in image.info else {"GPS": {}}
+            gps_dict = create_gps_dict(latitude, longitude)
+            exif_dict['GPS'] = gps_dict
+            exif_bytes = piexif.dump(exif_dict)
+
+            # Enregistrement de l'image avec les nouvelles métadonnées
+            image.save("output_image.jpg", "jpeg", exif=exif_bytes)
+            st.success("Les données GPS ont été mises à jour.")
+        
+            # Fournir un lien de téléchargement pour l'image modifiée
+            with open("output_image.jpg", "rb") as file:
+                btn = st.download_button(
+                    label="Télécharger l'image modifiée",
+                    data=file,
+                    file_name="output_image.jpg",
+                    mime="image/jpeg"
+                )
     else:
         st.write("Aucune métadonnée EXIF trouvée dans l'image.")
