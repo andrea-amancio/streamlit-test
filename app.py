@@ -1,6 +1,6 @@
 import streamlit as st
 from PIL import Image, ExifTags
-import piexif
+#import piexif
 import piexif.helper
 
 # Titre de l'application
