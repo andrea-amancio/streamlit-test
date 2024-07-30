@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image, ExifTags
 #import piexif
-import piexif.helper
+#import piexif.helper
 
 # Titre de l'application
 st.title('Éditeur de métadonnées EXIF ou pas')
