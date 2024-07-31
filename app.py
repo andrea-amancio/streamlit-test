@@ -1,6 +1,6 @@
 import streamlit as st
-from PIL import Image, ExifTags
 import folium
+from PIL import Image, ExifTags
 from io import BytesIO
 
 # Titre de l'application
